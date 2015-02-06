@@ -1,0 +1,42 @@
+#!/bin/bash
+# 	ranger			tsh
+#	.local			gaftest/local
+#	.config			gaftest/config
+
+# ----------------------------------------------------------------------
+# setup for testing gaf
+
+die() { echo "$@" >&2; exit 1; }
+warn() { echo "$@" >&2; }
+
+export GAF_REPO=$HOME/gr
+export GAF_FLIST=$HOME/gfl
+
+# satisfy git
+git config --global user.email "gaf@sita-lt"
+git config --global user.name "Gitify Any File"
+
+# put ourselves in PATH (we assume ~/bin is in PATH)
+mkdir -p ~/bin
+cp gaf ~/bin
+
+opwd=$PWD
+cd
+
+# get our sample "remote" repo
+[ -d ~/tsh.git ] || git clone --bare git://github.com/sitaramc/tsh.git
+# get testing shell, and wow lookie -- our sample remote just happens to be tsh!
+[ -x ~/bin/tsh ] || git archive --remote=tsh.git HEAD Tsh.pm tsh tshrec | tar -C ~/bin -xf -
+
+# setup the "remote" repo
+
+cd
+# the "gaf repo" and "gaf (locally loaded) feature list"
+rm -rf gr gfl
+
+rm -rf ~/gaftest
+mkdir -p ~/gaftest/local ~/gaftest/config
+git clone tsh.git ~/gaftest/local/tsh
+seq 1 5 > ~/gaftest/config/fileA
+seq 6 10 > ~/gaftest/config/fileB
+seq 11 15 > ~/gaftest/config/fileC

@@ -1,0 +1,79 @@
+#!/bin/bash
+# though this will always be sourced!
+
+# save URLs instead of the full repo, and do a corresponding 'git clone' on
+# restore.
+
+urls_git_status_summary() {
+    git -c color.ui=always status -s -uno | egrep -o '^.*?m ' | sort | uniq -c
+}
+
+urls_git_origin() {
+    origin=$(cd $1; git config --get remote.origin.url)
+    [[ $origin =~ : ]] || warn "your origin URL seems local: '$origin'"
+}
+
+urls_copy_url() {
+    local dst=$1
+
+    # show git status summary of $lfd (just as an FYI)
+    in_dir $dst urls_git_status_summary
+    urls_git_origin $dst     # sets $origin
+
+    grep >&/dev/null "^$origin#" $GAF_REPO/.gaf.urls ||
+    echo "$origin#$dst" >> $GAF_REPO/.gaf.urls
+    # we figure "#" is as good a delimiter as any!  Yeah it's a kludge, sue me :)
+}
+
+urls_clone_pull() {
+    local urldst=$1
+
+    # remember the url and the dest path are separated by a '#'
+    local url=${urldst%%#*}
+    local dst=${urldst##*#}
+
+    # if the path does not exist, you need to clone
+    if [ ! -d "$dst" ]
+    then
+        git clone "$url" "$dst" || die "git clone failed"
+    else
+        # make sure it's a git repo
+        [ -d "$dst/.git" ] || die "'$dst' not empty, can't clone '$url'"
+
+        # now fetch/pull the repo.  We assume you're not fiddling with this
+        # enough to get merge conflicts!
+        (cd $dst; git pull) || die "git pull failed"
+    fi
+}
+
+GAF_PLUGIN_HELP="${GAF_PLUGIN_HELP}Save and restore git URLs instead of actual code; useful for all those vim
+plugins in ~/.vim/bundle, and so on:
+
+    gaf urlsave <branch> <git repos>
+    gaf urlrestore <branch>
+";
+
+# if the entry is a git repo, and "lite mode" is "on", add the URL instead of copying the files
+gaf_urlsave() {
+    feature=$1; shift
+
+    for lfd
+    do
+        if [ -d "$lfd/.git" ]
+        then
+            urls_copy_url $lfd
+        fi
+    done
+}
+
+gaf_urlrestore() {
+    feature=$1; shift
+    in_dir $GAF_REPO git_checkout $feature
+
+    [ -f $GAF_REPO/.gaf.urls ] || die "expected '.gaf.urls' file not found"
+
+    for urldst in $(cat $GAF_REPO/.gaf.urls)
+    do
+        urls_clone_pull $urldst # remember that contains the dest path also!
+    done
+}

@@ -1,0 +1,253 @@
+#!/bin/bash
+
+die() { echo "FATAL: $@" >&2; exit 1; }
+warn() { echo "WARNING: $@" >&2; }
+
+# GAF_REPO env var overrides default location
+GAF_REPO=${GAF_REPO:-$HOME/.gaf}
+[[ $GAF_REPO =~ ^/ ]] || die "GAF_REPO should be an absolute path"
+# GAF_FLIST is the "locally checked out feature list"; can be overridden
+GAF_FLIST=${GAF_FLIST:-$GAF_REPO.flist}
+
+# ----------------------------------------------------------------------
+# service routines
+
+in_dir() {
+    local opwd=$PWD
+    cd $1; shift
+    "$@"
+    cd $opwd
+}
+
+git_status_clean() {
+    local t=$(cd $GAF_REPO; git status --porcelain 2>&1)
+    [ -z "$t" ]
+}
+
+git_checkout() {
+    local b=$1
+    # existing local or remote branch (create tracking branch if needed)
+    git checkout -q -f $b 2>/dev/null && return
+
+    # create not asked?  return error
+    [ "$2" = "-b" ] || { warn "branch '$1' does not exist"; return 1; }
+
+    # new branch; create it based on master
+    git checkout -q -f master
+    git checkout -q -b $b || die "checkout '$b' failed"
+
+    # XXX we don't cover the case where a branch name happens to be the same as a path name in the currently checked out branch!
+}
+
+git_commit() {
+    if [ -n "$(git status --porcelain)" ]
+    then
+        git add -A
+        git commit -m "$branch: $COMMIT_MESSAGE"
+    fi
+}
+
+update_list() {
+    # generic "update list without duplicates"
+    grep "$1" $3 >&/dev/null || {
+        echo "$2" >> $3
+    }
+}
+
+# ----------------------------------------------------------------------
+# copy files to repo from 'working' copies
+
+copy_to_repo() {
+    local src=$1
+
+    # branch has already been checkedout in caller
+
+    # if file/dir to copy is specified
+    if [ -n "$src" ]
+    then
+        # copy $src with full path into $dst (not just the last node).  That
+        # is, copying a/b/c to d/e will result in d/e/a/b/c, not d/e/c.
+        tar -cf - --exclude .git $src | (cd $GAF_REPO; tar -xf -)
+        return $?
+    fi
+
+    # else, just refresh files/dirs already in the branch
+    # file list                  | from orig PWD  | to $GAF_REPO
+    (cd $GAF_REPO; git ls-files) | tar -cf - -T - | tar -C $GAF_REPO -xf -
+}
+
+# ----------------------------------------------------------------------
+# copy files from repo to 'working' copies
+
+copy_from_repo() {
+    git_checkout $1 && git archive HEAD | tar -C $opwd -xf -
+}
+
+# ----------------------------------------------------------------------
+# core commands
+
+gaf_init() {
+    [ -d $GAF_REPO ] || git init $GAF_REPO
+    cd $GAF_REPO
+    git rev-parse --verify --quiet master >/dev/null && exit 0
+
+    git commit --allow-empty -m start &&
+    git tag start &&
+    exit 0
+
+    die "some error in init; see previous messages"
+}
+
+gaf_list() {
+    cd $GAF_REPO 2>/dev/null || die "'cd' failed; '\$GAF_REPO' not set?"
+    for f in $(git for-each-ref '--format=%(refname:short)' refs/heads)
+    do
+        grep "^$f$" $GAF_FLIST >&/dev/null && printf "* " || printf "  "
+        echo $f
+    done
+    exit 0
+}
+
+gaf_save() {
+    git_status_clean || die "gaf repo is not clean"
+
+    branch=$1
+    shift
+
+    in_dir $GAF_REPO git_checkout $branch -b
+
+    if [ -z "$1" ]  # no args
+    then
+        COMMIT_MESSAGE=${COMMIT_MESSAGE:-"refresh files in repo"}
+        copy_to_repo
+    else
+        COMMIT_MESSAGE=${COMMIT_MESSAGE:-"$*"}
+        for lfd     # list of files/dirs
+        do
+            lfd=${lfd%/}    # remove any trailing slash
+            [ -e $lfd ] || warn "'$lfd' does not exist; skipping"
+
+            copy_to_repo $lfd
+        done
+    fi
+
+    in_dir $GAF_REPO git_commit
+    update_list "^$branch$" $branch $GAF_FLIST
+}
+
+gaf_restore() {
+    git_status_clean || die "gaf repo is not clean"
+
+    [ -n "$1" ] || set `cat $GAF_FLIST`
+
+    for branch
+    do
+        # first, the normal files
+        in_dir $GAF_REPO copy_from_repo $branch
+
+        update_list "^$branch$" $branch $GAF_FLIST
+    done
+}
+
+gaf_cycle() {
+    git_status_clean || die "gaf repo is not clean"
+
+    [ "$PWD" = "$HOME" ] || die "you're not at \$HOME!"
+    for f in `cat $GAF_FLIST`
+    do
+        echo -n $f...
+        $0 save $f
+        $0 pull >/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+        $0 restore $f
+        echo done
+    done
+}
+
+gaf_diff() {
+    git_status_clean || die "gaf repo is not clean"
+
+    if [ -z "$1" ]   # no arguments given
+    then
+        list="`cat $GAF_FLIST`"
+        set -- "--stat"
+    else
+        list=$1; shift
+    fi
+
+    for branch in $list     # git branches can't have spaces in them anyway, thank God!
+    do
+        in_dir $GAF_REPO git_checkout $branch
+        copy_to_repo
+        git_status_clean && continue
+
+        in_dir $GAF_REPO git branch --list -v -v $branch
+        in_dir $GAF_REPO git diff "$@"
+    done
+    # clean things up, whatever the branch may be
+    in_dir $GAF_REPO git checkout -f
+}
+
+gaf_help() {
+    cat <<EOF
+gaf -- gitify arbitrary files
+
+This is just a quick refresh of the most common commands; please see
+http://gitolite.com/gaf for more features and details.
+
+    gaf init            # ~/.gaf or \$GAF_REPO
+    gaf save <branch> <list of files/dirs...>
+    gaf save <branch>   # recopy only files known to branch (like 'git add -u')
+    gaf restore <branch>
+    gaf cycle
+    gaf find <pattern>  # find what branch has files matching pattern
+    gaf <any git command or alias> <args>       # will run in gaf repo dir
+
+EOF
+echo "$GAF_PLUGIN_HELP"
+    exit 1
+}
+
+# ----------------------------------------------------------------------
+# extra commands
+gaf_find() {
+    cd $GAF_REPO
+    for b in `cat $GAF_FLIST`
+    do
+        git ls-tree -r -t $b | cut -f2 | egrep -i "$1" | while read f
+        do
+            echo "$b: $f"
+        done
+    done
+}
+
+# ----------------------------------------------------------------------
+# main
+
+# just a fancy include mechanism with some tight unstated rules; ignore!
+for p in $0-*.plugin
+do
+    [ -r $p ] && source $p
+done
+
+[ -n "$1" ] || gaf_help
+[ "$1" = "-h" ] && gaf_help
+
+cmd=$1
+shift
+
+if typeset -f gaf_$cmd >/dev/null
+then
+    # 'save' with absolutely no arguments is a special case
+    if [ $cmd = save ] && [ -z "$1" ]
+    then
+        for f in `cat $GAF_FLIST`
+        do
+            gaf_save $f
+        done
+    else
+        gaf_$cmd "$@"
+    fi
+else
+    cd $GAF_REPO
+    git $cmd "$@"
+fi
