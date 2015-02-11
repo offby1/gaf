@@ -1,7 +1,8 @@
 # gaf -- gitify arbitrary files
 
-This *document* is an experiment to see if I am capable of being brief!
-(Hint: read the whole thing.  And pay special attention to stuff in **bold**!)
+The code is fine but this *document* is an experiment to see if I am capable
+of being brief!  (Hint: read the whole thing.  And pay special attention to
+stuff in **bold**!)
 
 ----
 
@@ -12,69 +13,71 @@ tin -- gitify arbitrary files.  It does this by **copying** files between the
 
 I use gaf for (1) dotfile management, (2) maintaining /etc, /var/named, etc.,
 and (3) for saving copies of arbitrary files "just in case".  For case (1) and
-case (2), once things are setup and stable, the only command I run
-(ir)regularly is `gaf cycle && gaf push`.
+case (2), once things are setup and stable, except for adding new files the
+only command I ever run is `gaf cycle && gaf push`.
 
-Apart from the information below, remember the gaf repo is just a normal git
-repo, so you can "cd" there and do whatever you want.
+Also, remember the gaf repo is just a normal git repo, so you can "cd" there
+and do whatever you want.
 
 ## gaf commands
 
-1.  **`init`** -- creates the repo (`~/.gaf` by default, or wherever the
+*   **`init`** -- creates the repo (`~/.gaf` by default, or wherever the
     env var `GAF_REPO` points to).
 
         git init
 
-2.  (a) **`save <branch> <paths>`** -- copies given files and directories to
-    the repo and commits them on the given branch name.  The branch (the word
-    after "save") will be created if needed.
+*   **`save`**
 
-        gaf save base .bashrc .gitconfig .less .vimrc .vim
-        gaf save personal .muttrc* .taskrc .ssh .gnupg
-        gaf save scripts  bin
+    *   **`save <branch> <paths>`** -- copies given files and directories to
+        the repo and commits them on the given branch name.  The branch (the
+        word after "save") will be created if needed.
 
-    (b) **`save <branch>`** -- with just a branch name, recopies and commits
-    files **already known** to the branch (think "git add -u" here).
+            gaf save base .bashrc .gitconfig .less .vimrc .vim
+            gaf save personal .muttrc* .taskrc .ssh .gnupg
+            gaf save scripts  bin
 
-        gaf save base
+    *   **`save <branch>`** -- with just a branch name, recopies and commits
+        files **already known** to the branch (think "git add -u" here).
 
-    (c) **`save`** (with no arguments) is a shortcut for running `gaf save
-    <branch>` for each branch in the feature list.
+            gaf save base
 
-        gaf save
+    *   **`save`** (with no arguments) is a shortcut for running `gaf save <branch>`
+        for each branch in the feature list.
 
-    **WARNING**: `gaf save` does not deal with deleted files.  You will have
-    to "cd" to the gaf repo directory and fix it yourself.  This may change
-    later, if people ask!
+            gaf save
+
+    <font color="red">**WARNING**</font>: `gaf save` does not deal with
+    deleted files.  You will have to "cd" to the gaf repo directory and fix it
+    yourself.  This may change later, if people ask!
 
     Any branch you save is added to the **feature list**, which is just a
     plain text file at `~/.gaf.flist` by default.
 
-3.  (a) **`restore <branch>`** -- copies files from branch to current
-    directory.
+*   **`restore`**
 
-        gaf restore base
-        gaf restore scripts
+    *   **`restore <branch>`** -- copies files from branch to current
+        directory.
 
-    (b) **`restore`** (with no arguments) is a shortcut for running `gaf
-    restore <branch>` for each branch in the feature list.
+            gaf restore base
+            gaf restore scripts
+
+    *   **`restore`** (with no arguments) is a shortcut for running `gaf
+        restore <branch>` for each branch in the feature list.
 
     Any branch you restore is also added to the **feature list**.
 
     **TIP**: dry-running the restore is easy; just run it within an empty
     directory to see what files would get written.
 
-4.  **`gaf list`** -- list branches in gaf repo.  Branches that are in the
-    feature list are marked with an asterisk.
+*   **`gaf list`** -- like "git branch" but branches that are in the feature
+    list are marked with an asterisk.
 
-5.  **`cycle`** -- does one complete cycle of a typical commit-then-merge
-    development loop.
-
-    "cycle" goes through the feature list, and for each branch in it runs:
+*   **`cycle`** -- does one complete cycle of a typical commit-then-merge
+    development loop.  For each branch in the feature list, it runs:
 
     *   `gaf save <branch>` to save your local changes
     *   `gaf pull` to pull in changes from the central server
-    *   `gaf restore` to copy those changes to your current directory
+    *   `gaf restore <branch>` to copy those changes to your current directory
 
     **`gaf pull` may fail** due to merge conflicts, in which case it will
     abort; you should "cd" to the gaf repo, fix the conflict, commit, and then
@@ -83,20 +86,23 @@ repo, so you can "cd" there and do whatever you want.
     **WARNING**: cycle won't run if you're not in your \$HOME.  At present
     there's no getting around this; ask me if you need to.
 
-6.  **`gaf find <pattern>`**: uses "egrep -i" on the *names* of the files (not
+*   **`gaf find <pattern>`**: uses "egrep -i" on the *names* of the files (not
     contents!) in all branches and prints the results.
 
-7.  (a) **`gaf diff`**: prints branch information then runs `git diff --stat`
-    for each branch in the feature list.  Note this involves checking out each
-    branch in turn!
+*   **`gaf diff`**
 
-    (b) **`gaf diff <branch> <diff options>`**: runs a full diff for the given
-    branch.  You can append whatever options you like; the default is nothing
-    so you get a plain `git diff`.
+    *   **`gaf diff`**: prints branch information then runs `git diff --stat`
+        for each branch in the feature list.  Note this involves checking out
+        each branch in turn!
 
-    Use this to see what changes `git save` would commit.
+    *   **`gaf diff <branch> [<diff options>]`**: runs a full diff for the
+        given branch.  You can append whatever options you like; the default
+        is nothing so you get a plain `git diff`.
 
-8.  **`any git command or alias`** 
+    Use this to see what changes `gaf save` would commit.  Or conversely, what
+    changes `gaf restore` would overwrite!
+
+*   **`any git command or alias`** 
 
     You probably wondered how `gaf pull` would work, since we didn't list that
     as a "gaf command".  It works because gaf takes anything that it does not
@@ -104,14 +110,16 @@ repo, so you can "cd" there and do whatever you want.
 
 The rest of it is plain git -- like creating a bare server repo, pushing to
 it, cloning from it on another machine (**don't forget** to clone it as
-`~/.gaf`!!), etc. -- except that because of #7 above you don't need to do
-things *from the gaf repo*.  For example, this is how the first machine would
-set up the "remote server":
+`~/.gaf`!!), etc. -- except that you don't have to do everything *from the gaf
+repo*.  For example, this is how the first machine would set up the "remote
+server":
 
     gaf remote add origin <URL>
     gaf push origin -u --all
 
 ## managing /etc and such
+
+TBD
 
 ## saving arbitrary work-in-progress
 
