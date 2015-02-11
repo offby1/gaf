@@ -15,8 +15,9 @@ GAF_FLIST=${GAF_FLIST:-$GAF_REPO.flist}
 in_dir() {
     local opwd=$PWD
     cd $1; shift
-    "$@"
+    "$@"; local rc=$?
     cd $opwd
+    return $rc
 }
 
 git_status_clean() {
@@ -176,7 +177,7 @@ gaf_diff() {
 
     for branch in $list     # git branches can't have spaces in them anyway, thank God!
     do
-        in_dir $GAF_REPO git_checkout $branch
+        in_dir $GAF_REPO git_checkout $branch || continue
         copy_to_repo
         git_status_clean && continue
 
@@ -184,7 +185,7 @@ gaf_diff() {
         in_dir $GAF_REPO git diff "$@"
     done
     # clean things up, whatever the branch may be
-    in_dir $GAF_REPO git checkout -f
+    git_status_clean || in_dir $GAF_REPO git checkout -f
 }
 
 gaf_help() {
