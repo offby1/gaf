@@ -212,9 +212,11 @@ echo -n "$GAF_PLUGIN_HELP"
 # extra commands
 gaf_find() {
     cd $GAF_REPO
-    for b in `cat $GAF_FLIST`
+    patt=$1; shift
+    [ -n "$1" ] || set `cat $GAF_FLIST`
+    for b
     do
-        git ls-tree -r -t $b | cut -f2 | egrep -i "$1" | while read f
+        git ls-tree -r -t $b | cut -f2 | egrep -i "$patt" | while read f
         do
             printf "$b\t$f\n"
         done
