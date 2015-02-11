@@ -203,7 +203,7 @@ http://gitolite.com/gaf for more features and details.
     gaf <any git command or alias> <args>       # will run in gaf repo dir
 
 EOF
-echo "$GAF_PLUGIN_HELP"
+echo -n "$GAF_PLUGIN_HELP"
     exit 1
 }
 
@@ -215,7 +215,7 @@ gaf_find() {
     do
         git ls-tree -r -t $b | cut -f2 | egrep -i "$1" | while read f
         do
-            echo "$b: $f"
+            printf "$b\t$f\n"
         done
     done
 }
