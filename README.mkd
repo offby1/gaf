@@ -21,28 +21,29 @@ and do whatever you want.
 
 ## gaf commands
 
-*   **`init`** -- creates the repo (`~/.gaf` by default, or wherever the
+*   **`gaf init`** -- creates the repo (`~/.gaf` by default, or wherever the
     env var `GAF_REPO` points to).
 
         git init
 
-*   **`save`**
+*   **`gaf save`**
 
-    *   **`save <branch> <paths>`** -- copies given files and directories to
-        the repo and commits them on the given branch name.  The branch (the
-        word after "save") will be created if needed.
+    *   `gaf save <branch> <paths>` -- copies given files and directories
+        to the repo and commits them on the given branch name.  The branch
+        (the word after "save") will be created if needed.
 
             gaf save base .bashrc .gitconfig .less .vimrc .vim
             gaf save personal .muttrc* .taskrc .ssh .gnupg
             gaf save scripts  bin
 
-    *   **`save <branch>`** -- with just a branch name, recopies and commits
-        files **already known** to the branch (think "git add -u" here).
+    *   `gaf save <branch>` -- with just a branch name, recopies and
+        commits files **already known** to the branch (think "git add -u"
+        here).
 
             gaf save base
 
-    *   **`save`** (with no arguments) is a shortcut for running `gaf save <branch>`
-        for each branch in the feature list.
+    *   `gaf save` (with no arguments) is a shortcut for running `gaf save
+        <branch>` for each branch in the feature list.
 
             gaf save
 
@@ -53,15 +54,15 @@ and do whatever you want.
     Any branch you save is added to the **feature list**, which is just a
     plain text file at `~/.gaf.flist` by default.
 
-*   **`restore`**
+*   **`gaf restore`**
 
-    *   **`restore <branch>`** -- copies files from branch to current
+    *   `gaf restore <branch>` -- copies files from branch to current
         directory.
 
             gaf restore base
             gaf restore scripts
 
-    *   **`restore`** (with no arguments) is a shortcut for running `gaf
+    *   `gaf restore` (with no arguments) is a shortcut for running `gaf
         restore <branch>` for each branch in the feature list.
 
     Any branch you restore is also added to the **feature list**.
@@ -72,7 +73,7 @@ and do whatever you want.
 *   **`gaf list`** -- like "git branch" but branches that are in the feature
     list are marked with an asterisk.
 
-*   **`cycle`** -- does one complete cycle of a typical commit-then-merge
+*   **`gaf cycle`** -- does one complete cycle of a typical commit-then-merge
     development loop.  For each branch in the feature list, it runs:
 
     *   `gaf save <branch>` to save your local changes
@@ -86,23 +87,27 @@ and do whatever you want.
     **WARNING**: cycle won't run if you're not in your \$HOME.  At present
     there's no getting around this; ask me if you need to.
 
-*   **`gaf find <pattern>`**: uses "egrep -i" on the *names* of the files (not
-    contents!) in all branches and prints the results.
+*   **`gaf find`**
+
+    *   `gaf find <pattern>`: uses "egrep -i" on the *names* of the files
+        (not contents!) in all branches and prints the results.
+
+    *   `gaf find <pattern> <branches>`: same, but only in given branches.
 
 *   **`gaf diff`**
 
-    *   **`gaf diff`**: prints branch information then runs `git diff --stat`
+    *   `gaf diff`: prints branch information then runs `git diff --stat`
         for each branch in the feature list.  Note this involves checking out
         each branch in turn!
 
-    *   **`gaf diff <branch> [<diff options>]`**: runs a full diff for the
+    *   `gaf diff <branch> [<diff options>]`: runs a full diff for the
         given branch.  You can append whatever options you like; the default
         is nothing so you get a plain `git diff`.
 
     Use this to see what changes `gaf save` would commit.  Or conversely, what
     changes `gaf restore` would overwrite!
 
-*   **`any git command or alias`** 
+*   **`gaf <any git command or alias + args>`** 
 
     You probably wondered how `gaf pull` would work, since we didn't list that
     as a "gaf command".  It works because gaf takes anything that it does not
