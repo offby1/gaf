@@ -126,6 +126,10 @@ server":
 
 TBD
 
+(don't forget 'git config tar.umask = 0022' otherwise /etc etc become
+unreadable by ordinary users when you restore with a tighter umask!  Also the
+default is 0002, which... sucks!)
+
 ## saving arbitrary work-in-progress
 
 I end up using this more than I expected, especially for stuff like documents,
