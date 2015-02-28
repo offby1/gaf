@@ -153,12 +153,20 @@ gaf_restore() {
 gaf_cycle() {
     git_status_clean || die "gaf repo is not clean"
 
+    local remote=       # no pun intended!
+    [ -n "$1" ] && remote=$1 && shift
+
     [ "$PWD" = "$HOME" ] || die "you're not at \$HOME!"
     for f in `cat $GAF_FLIST`
     do
         echo -n $f...
         $0 save $f
-        $0 pull >/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+        if [ -n "$remote" ]
+        then
+            $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+        else
+            $0 pull             >&/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+        fi
         $0 restore $f
         echo done
     done
