@@ -153,23 +153,22 @@ gaf_restore() {
 gaf_cycle() {
     git_status_clean || die "gaf repo is not clean"
 
-    local remote=       # no pun intended!
-    [ -n "$1" ] && remote=$1 && shift
-    gaf fetch $remote
-
     [ "$PWD" = "$HOME" ] || die "you're not at \$HOME!"
-    for f in `cat $GAF_FLIST`
+
+    local remote        # no pun intended!
+    for remote in `gaf remote`
     do
-        echo -n $f...
-        $0 save $f
-        if [ -n "$remote" ]
-        then
+        color blue $remote;echo
+        gaf fetch $remote
+
+        for f in `cat $GAF_FLIST`
+        do
+            echo -n $f...
+            $0 save $f
             $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
-        else
-            $0 pull             >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
-        fi
-        $0 restore $f
-        echo done
+            $0 restore $f
+            echo done
+        done
     done
 }
 
