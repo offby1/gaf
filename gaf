@@ -164,9 +164,9 @@ gaf_cycle() {
         $0 save $f
         if [ -n "$remote" ]
         then
-            $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+            $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
         else
-            $0 pull             >&/dev/null || die "branch '$f' has conflicts; please fix, commit, and push"
+            $0 pull             >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
         fi
         $0 restore $f
         echo done
