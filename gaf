@@ -190,7 +190,8 @@ gaf_diff() {
         copy_to_repo
         git_status_clean && continue
 
-        in_dir $GAF_REPO git branch --list -v -v $branch
+        # rats; old git doesn't do "git branch --list -v -v $branch"!
+        in_dir $GAF_REPO git branch -v -v | grep " $branch "
         in_dir $GAF_REPO git diff "$@"
     done
     # clean things up, whatever the branch may be
