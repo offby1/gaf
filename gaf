@@ -155,6 +155,7 @@ gaf_cycle() {
 
     local remote=       # no pun intended!
     [ -n "$1" ] && remote=$1 && shift
+    gaf fetch $remote
 
     [ "$PWD" = "$HOME" ] || die "you're not at \$HOME!"
     for f in `cat $GAF_FLIST`
