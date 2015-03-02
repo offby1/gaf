@@ -3,6 +3,12 @@
 die() { echo "FATAL: $@" >&2; exit 1; }
 warn() { echo "WARNING: $@" >&2; }
 
+red=`git config --get-color "" "red bold"`
+blue=`git config --get-color "" "blue bold"`
+green=`git config --get-color "" "green bold"`
+reset=`git config --get-color "" "reset"`
+paint() { printf "$1"; printf "$2"; printf "$reset"; }
+
 # GAF_REPO env var overrides default location
 GAF_REPO=${GAF_REPO:-$HOME/.gaf}
 [[ $GAF_REPO =~ ^/ ]] || die "GAF_REPO should be an absolute path"
@@ -158,7 +164,7 @@ gaf_cycle() {
     local remote        # no pun intended!
     for remote in `gaf remote`
     do
-        color blue $remote;echo
+        paint $blue "$remote: "
         gaf fetch $remote
 
         for f in `cat $GAF_FLIST`
@@ -167,8 +173,8 @@ gaf_cycle() {
             $0 save $f
             $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
             $0 restore $f
-            echo done
         done
+        echo
     done
 }
 
