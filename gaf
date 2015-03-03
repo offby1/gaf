@@ -162,10 +162,10 @@ gaf_cycle() {
     [ "$PWD" = "$HOME" ] || die "you're not at \$HOME!"
 
     local remote        # no pun intended!
-    for remote in `gaf remote`
+    for remote in `$0 remote`
     do
         paint $blue "$remote: "
-        gaf fetch $remote
+        $0 fetch $remote
 
         for f in `cat $GAF_FLIST`
         do
