@@ -203,6 +203,29 @@ gaf_diff() {
     git_status_clean || in_dir $GAF_REPO git checkout -f
 }
 
+# this is somewhat inefficient but elegant enough that I don't care
+gaf_untracked() {
+    local od=$PWD; cd $GAF_REPO
+    git_status_clean || die "gaf repo is not clean"
+
+    [ -n "$1" ] || set `cat $GAF_FLIST`
+
+    # make a detached head from the first "feature"
+    git checkout $(git rev-parse $1) >&/dev/null
+    shift
+    for f
+    do
+        # then merge all the others in to it
+        git merge $f >&/dev/null || die "merge '$f' failed"
+    done
+
+    # now run 'git status' with $od as the "work tree"
+    ( cd $od; git -p --git-dir=$GAF_REPO/.git --work-tree=$PWD status )
+
+    # cleanup and exit
+    git checkout -f master >&/dev/null
+}
+
 gaf_help() {
     cat <<EOF
 gaf -- gitify arbitrary files

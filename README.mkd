@@ -1,23 +1,20 @@
 # gaf -- gitify arbitrary files
 
-The code is fine but this *document* is an experiment to see if I am capable
-of being brief!  (Hint: read the whole thing.  And pay special attention to
-stuff in **bold**!)
-
-----
-
 Normally, the git work tree has to be within a given directory; you can't
 manage arbitrary files using git.  Gaf allows you to do what it says on the
 tin -- gitify arbitrary files.  It does this by **copying** files between the
 **current directory** and the **gaf repo**.
 
-I use gaf for (1) dotfile management, (2) maintaining /etc, /var/named, etc.,
-and (3) for saving copies of arbitrary files "just in case".  For case (1) and
-case (2), once things are setup and stable, except for adding new files the
-only command I ever run is `gaf cycle && gaf push`.
+I use gaf for dotfile management, and maintaining /etc, /var/named, etc.
+(which are kind of like system-level dotfiles anyway).  Once things are setup
+and stable, except for adding new files the only command I run regularly is
+`gaf cycle && gaf push`.
 
 Also, remember the gaf repo is just a normal git repo, so you can "cd" there
 and do whatever you want.
+
+(I also use it to save copies of arbitrary files "just in case"; see the last
+section for details).
 
 ## gaf commands
 
@@ -28,9 +25,9 @@ and do whatever you want.
 
 *   **`gaf save`**
 
-    *   `gaf save <branch> <paths>` -- copies given files and directories
-        to the repo and commits them on the given branch name.  The branch
-        (the word after "save") will be created if needed.
+    *   `gaf save <branch> <paths>` -- copies given files and directories to
+        the repo and commits them on the given branch name.  The branch will
+        be created if needed.
 
             gaf save base .bashrc .gitconfig .less .vimrc .vim
             gaf save personal .muttrc* .taskrc .ssh .gnupg
@@ -43,7 +40,7 @@ and do whatever you want.
             gaf save base
 
     *   `gaf save` (with no arguments) is a shortcut for running `gaf save
-        <branch>` for each branch in the feature list.
+        <branch>` for each branch in the **feature list**.
 
             gaf save
 
@@ -77,14 +74,15 @@ and do whatever you want.
     development loop.  For each branch in the feature list, it runs:
 
     *   `gaf save <branch>` to save your local changes
-    *   `gaf pull` to pull in changes from the central server
-    *   `gaf restore <branch>` to copy those changes to your current directory
+    *   `gaf pull` to fetch and merge changes from the central server
+    *   `gaf restore <branch>` to copy the (merged) files to your current
+        directory
 
-    **`gaf pull` may fail** due to merge conflicts, in which case it will
-    abort; you should "cd" to the gaf repo, fix the conflict, commit, and then
-    rerun the `gaf cycle` command.
+    **`gaf pull` may fail** due to merge conflicts, in which case the entire
+    'cycle' operation will abort; you should "cd" to the gaf repo, fix the
+    conflict, commit, and then rerun the `gaf cycle` command.
 
-    **WARNING**: cycle won't run if you're not in your \$HOME.  At present
+    **WARNING**: cycle won't run if you're not in your $HOME.  At present
     there's no getting around this; ask me if you need to.
 
 *   **`gaf find`**
@@ -107,6 +105,17 @@ and do whatever you want.
     Use this to see what changes `gaf save` would commit.  Or conversely, what
     changes `gaf restore` would overwrite!
 
+    This is the only command that usurps a git command name.  If you have an
+    alias for diff in your `~/.gitconfig` you can still use that as normal of
+    course.
+
+*   **`gaf untracked`**
+
+    Run this from whatever directory was the base for the files saved to gaf
+    (usually $HOME).  It's a little inefficient but not noticeably so.  Useful
+    to review the files you're *not* saving, and consider if some of them
+    should be saved to some feature.
+
 *   **`gaf <any git command or alias + args>`** 
 
     You probably wondered how `gaf pull` would work, since we didn't list that
@@ -124,19 +133,28 @@ server":
 
 ## managing /etc and such
 
-TBD
+If you cd to "/" and set GAF\_REPO to some non-default location, gaf behaves a
+bit like etckeeper, with two important plus points (in my view):
 
-(don't forget 'git config tar.umask = 0022' otherwise /etc etc become
-unreadable by ordinary users when you restore with a tighter umask!  Also the
-default is 0002, which... sucks!)
+*   It doesn't unconditionally commit the whole `/etc` every night!
+*   It lets me add stuff outside `/etc` as well, like /var/named/...,
+    /var/spool/cron, etc.
+
+The downside is permissions.  At the moment gaf does not deal with permissions
+in any way, so all the files it handles are written back to disk with
+permissions determined by the 'git archive' command.  At the moment I do this:
+
+*   run `git config tar.umask = 0022` in the gaf repo.  The default is 0002,
+    believe it or not!
+*   after a 'restore' or 'cycle', I run a custom script with some hardcoded
+    path names that need to be "chmod go-rx"-ed.
 
 ## saving arbitrary work-in-progress
 
-I end up using this more than I expected, especially for stuff like documents,
-spreadsheets, etc.  Briefly, anything that is of short term value (less than a
-year, say), and doesn't belong to any specific project, but which you still
-want to checkpoint for safety while working on it, can use this.  I have a
-shell function called "save":
+I use this for stuff like documents, spreadsheets, etc.; basically anything
+that is of short term value (less than a year, say), and doesn't belong to any
+specific project, but which you still want to checkpoint for safety while
+working on it.  I have a shell function called "save":
 
     save() (
         export GAF_REPO=$HOME/.save
@@ -148,6 +166,6 @@ so I just run, for example, `save review-comments.odt`.
 
 Note how we use a different gaf repo than the default, and how the function
 runs in a subshell to avoid setting that variable in the current shell.  Also
-note how the branch names are created to start with YY-MM.  Finally, note that
-this kind of branch is not -- generally -- a suitable candidate for "restore"
-(which is why it's in a non-default gaf repo!)
+note how the branch names are created to start with YY-MM for easy disposal.
+Finally, note that this kind of branch is not -- generally -- a suitable
+candidate for "restore" (which is why it's in a non-default gaf repo!)
