@@ -18,7 +18,7 @@ cd
 
 tsh <<EOF
 
-plan 89
+plan 87
 
 ## init and basics
 
@@ -51,8 +51,6 @@ cd /tmp;gaf list
 cd /tmp; gaf save test foobar1
     ok
     /WARNING: \'foobar1\' does not exist\; skipping/
-    /tar: foobar1: Cannot stat: No such file or directory/
-    /tar: Exiting with failure status due to previous errors/
 
 cd; cd gr;git log --all --decorate
     ok

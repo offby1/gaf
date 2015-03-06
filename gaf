@@ -132,7 +132,7 @@ gaf_save() {
         for lfd     # list of files/dirs
         do
             lfd=${lfd%/}    # remove any trailing slash
-            [ -e $lfd ] || warn "'$lfd' does not exist; skipping"
+            [ -e $lfd ] || { warn "'$lfd' does not exist; skipping"; continue; }
 
             copy_to_repo $lfd
         done
