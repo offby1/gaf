@@ -8,25 +8,59 @@ tin -- gitify arbitrary files.  It does this by **copying** files between the
 I use gaf mainly for:
 
 *   "dotfile" management and sync across machines and accounts
-*   /etc, /var/named, etc. (like etckeeper)
-*   saving arbitrary work-in-progress
+*   system config file management (/etc, /var/named, and so on) for multiple
+    machines.
 
-All these are discussed below.  For the first two use cases, even though gaf
-does have a lot of commands, once things are all setup and running, I only
-ever run `gaf cycle && gaf push` at (ir)regular intervals.
+Once things are all setup, I only ever run `gaf cycle && gaf push` at
+(ir)regular intervals.
+
+## the gaf repo
 
 The **gaf repo** is `~/.gaf` by default, though you can set the `GAF_REPO` env
-var to override that.  It's just a normal git repo, so if something weird
-happens you can "cd" there and fix it up quite easily.  I assume you have a
-working knowledge of git.
+var to override that.  It's just a normal git repo, and propagation of that
+repo between different users/machines (don't forget to clone it as `~/.gaf`!)
+is upto you.  I assume you have a working knowledge of git and know how to do
+that.
+
+Each branch in the gaf repo is a **feature**.  For example, you might have
+features "vim", "bash", "zsh", "devel", "mail", etc., and different
+users/machines may use different subsets of these features, even though the
+repo itself carries all of them.  The features used by any user are listed in
+a simple text file called the **feature list**, which is `~/.gaf.flist` by
+default, or at `$GAF_REPO.flist` otherwise.  The feature list is automatically
+updated by the 'save' and 'restore' commands.
+
+This is also how the same repo holds all my dotfiles as well as system config
+info for all the machines I "own".
+
+## gaf commands -- overview
+
+The last section has detailed descriptions but here's a quick overview:
+**init** creates the repo (one time), **save** and **restore** are the main
+"workhorse" commands, though **cycle** is the one you will actually use most
+often.  **list**, **find**, **diff**, and **untracked** are helper commands
+you might occasionally use.  Finally, any unrecognised command is passed on to
+git, which is how `gaf push` works.
+
+## managing /etc and such
+
+If you login as root, cd to "/", and set GAF\_REPO to some non-default
+location, gaf can manage your system files.  It's kinda like etckeeper, with a
+few important differences that I really needed:
+
+*   It doesn't unconditionally commit the whole of `/etc` every night (though
+    if you do want that it's trivial: just edit your crontab and add something
+    like `cd /; GAF_REPO=$HOME/.sysgaf gaf save etc /etc`).
+*   It lets me add stuff outside `/etc` as well, like /var/named/...,
+    /var/spool/cron, etc.
+*   It lets me keep the config for *many* machines in *one* repo -- they're
+    just different "features".
+
+Gaf saves and set the permissions also (only basic stuff, not xattrs, facls,
+or selinux stuff).  If running as root, it can also deal with saving and
+restoring owner and group ids.
 
 ## gaf commands
-
-The "normal use" gaf command is `gaf cycle`, the "worker" commands are `gaf
-save` and `gaf restore`, plus a few others for convenience.  Also, you can run
-any git command or alias you have (like `gaf push`, mentioned above), because
-gaf takes anything that it does not recognise and runs it via *git* itself,
-after `cd`-ing to the gaf repo.
 
 Here is the complete list, with sample usages where appropriate.
 
@@ -52,7 +86,7 @@ Here is the complete list, with sample usages where appropriate.
             gaf save base
 
     *   `gaf save` (with no arguments) is a shortcut for running `gaf save
-        <branch>` for each branch in the **feature list**.
+        <branch>` for each branch in the feature list.
 
             gaf save
 
@@ -60,8 +94,7 @@ Here is the complete list, with sample usages where appropriate.
     deleted files.  You will have to "cd" to the gaf repo directory and fix it
     yourself.  This may change later, if people ask!
 
-    Any branch you save is added to the **feature list**, which is just a
-    plain text file at `~/.gaf.flist` by default.
+    Any branch you save is added to the feature list.
 
 *   **`gaf restore`**
 
@@ -74,13 +107,10 @@ Here is the complete list, with sample usages where appropriate.
     *   `gaf restore` (with no arguments) is a shortcut for running `gaf
         restore <branch>` for each branch in the feature list.
 
-    Any branch you restore is also added to the **feature list**.
+    Any branch you restore is also added to the feature list.
 
     **TIP**: dry-running the restore is easy; just run it within an empty
     directory to see what files would get written.
-
-*   **`gaf list`** -- like "git branch" but branches that are in the feature
-    list are marked with an asterisk.
 
 *   **`gaf cycle`** -- does one complete cycle of a typical commit-then-merge
     development loop.  For each branch in the feature list, it runs:
@@ -96,6 +126,9 @@ Here is the complete list, with sample usages where appropriate.
 
     **WARNING**: cycle won't run if you're not in your $HOME.  At present
     there's no getting around this; ask me if you need to.
+
+*   **`gaf list`** -- like "git branch" but branches that are in the feature
+    list are marked with an asterisk.
 
 *   **`gaf find`**
 
@@ -128,42 +161,9 @@ Here is the complete list, with sample usages where appropriate.
     to review the files you're *not* saving, and consider if some of them
     should be saved to some feature.
 
-The rest of it is plain git -- like creating a bare server repo, pushing to
-it, cloning from it on another machine (**don't forget** to clone it as
-`~/.gaf`!!), etc. -- except that you don't have to do everything *from the gaf
-repo*.  For example, this is how the first machine would set up the "remote
-server":
+*   **`gaf <any git command or alias + args>`** 
 
-    gaf remote add origin <URL>
-    gaf push origin -u --all
-
-## managing /etc and such
-
-If you login as root, cd to "/", and maybe set GAF\_REPO to some non-default
-location, gaf can manage your system files.  It's kinda like etckeeper, with
-two important differences that I really needed:
-
-*   It doesn't unconditionally commit the whole of `/etc` every night!
-*   It lets me add stuff outside `/etc` as well, like /var/named/...,
-    /var/spool/cron, etc.
-
-Gaf saves and set the permissions also (only basic stuff, not xattrs, facls,
-or selinux stuff).  If running as root, it can also deal with setting owner
-and group ids.
-
-## saving arbitrary work-in-progress
-
-I also use gaf to save files that are of short term value (less than a year,
-say), and don't belong to any specific project, but which I still want to
-checkpoint for safety while working on them (typically documents,
-spreadsheets, etc.).  I have a shell function called "save":
-
-    save() (
-        export GAF_REPO=$HOME/.save
-        [ -d $GAF_REPO ] || gaf init
-        gaf save `date +%Y-%m`-save "$@"
-    )
-
-which lets me run, say, `save review-comments.odt`.  Note that this kind of
-branch is not -- generally -- a suitable candidate to "restore", which is why
-it's in a non-default gaf repo!
+    Gaf takes anything that it does not recognise and runs it via *git*
+    itself, after `cd`-ing to the gaf repo.  This is so that you don't have to
+    do everything *from the gaf repo*.  For example, you could easily run
+    `gaf remote add origin <URL>` from anywhere.
