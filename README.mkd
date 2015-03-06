@@ -5,18 +5,30 @@ manage arbitrary files using git.  Gaf allows you to do what it says on the
 tin -- gitify arbitrary files.  It does this by **copying** files between the
 **current directory** and the **gaf repo**.
 
-I use gaf for dotfile management, and maintaining /etc, /var/named, etc.
-(which are kind of like system-level dotfiles anyway).  Once things are setup
-and stable, except for adding new files the only command I run regularly is
-`gaf cycle && gaf push`.
+I use gaf mainly for:
 
-Also, remember the gaf repo is just a normal git repo, so you can "cd" there
-and do whatever you want.
+*   "dotfile" management and sync across machines and accounts
+*   /etc, /var/named, etc. (like etckeeper)
+*   saving arbitrary work-in-progress
 
-(I also use it to save copies of arbitrary files "just in case"; see the last
-section for details).
+All these are discussed below.  For the first two use cases, even though gaf
+does have a lot of commands, once things are all setup and running, I only
+ever run `gaf cycle && gaf push` at (ir)regular intervals.
+
+The **gaf repo** is `~/.gaf` by default, though you can set the `GAF_REPO` env
+var to override that.  It's just a normal git repo, so if something weird
+happens you can "cd" there and fix it up quite easily.  I assume you have a
+working knowledge of git.
 
 ## gaf commands
+
+The "normal use" gaf command is `gaf cycle`, the "worker" commands are `gaf
+save` and `gaf restore`, plus a few others for convenience.  Also, you can run
+any git command or alias you have (like `gaf push`, mentioned above), because
+gaf takes anything that it does not recognise and runs it via *git* itself,
+after `cd`-ing to the gaf repo.
+
+Here is the complete list, with sample usages where appropriate.
 
 *   **`gaf init`** -- creates the repo (`~/.gaf` by default, or wherever the
     env var `GAF_REPO` points to).
@@ -31,7 +43,7 @@ section for details).
 
             gaf save base .bashrc .gitconfig .less .vimrc .vim
             gaf save personal .muttrc* .taskrc .ssh .gnupg
-            gaf save scripts  bin
+            gaf save scripts bin
 
     *   `gaf save <branch>` -- with just a branch name, recopies and
         commits files **already known** to the branch (think "git add -u"
@@ -116,12 +128,6 @@ section for details).
     to review the files you're *not* saving, and consider if some of them
     should be saved to some feature.
 
-*   **`gaf <any git command or alias + args>`** 
-
-    You probably wondered how `gaf pull` would work, since we didn't list that
-    as a "gaf command".  It works because gaf takes anything that it does not
-    recognise and runs it via *git* itself, after `cd`-ing to the gaf repo.
-
 The rest of it is plain git -- like creating a bare server repo, pushing to
 it, cloning from it on another machine (**don't forget** to clone it as
 `~/.gaf`!!), etc. -- except that you don't have to do everything *from the gaf
@@ -133,28 +139,24 @@ server":
 
 ## managing /etc and such
 
-If you cd to "/" and set GAF\_REPO to some non-default location, gaf behaves a
-bit like etckeeper, with two important plus points (in my view):
+If you login as root, cd to "/", and maybe set GAF\_REPO to some non-default
+location, gaf can manage your system files.  It's kinda like etckeeper, with
+two important differences that I really needed:
 
-*   It doesn't unconditionally commit the whole `/etc` every night!
+*   It doesn't unconditionally commit the whole of `/etc` every night!
 *   It lets me add stuff outside `/etc` as well, like /var/named/...,
     /var/spool/cron, etc.
 
-The downside is permissions.  At the moment gaf does not deal with permissions
-in any way, so all the files it handles are written back to disk with
-permissions determined by the 'git archive' command.  At the moment I do this:
-
-*   run `git config tar.umask = 0022` in the gaf repo.  The default is 0002,
-    believe it or not!
-*   after a 'restore' or 'cycle', I run a custom script with some hardcoded
-    path names that need to be "chmod go-rx"-ed.
+Gaf saves and set the permissions also (only basic stuff, not xattrs, facls,
+or selinux stuff).  If running as root, it can also deal with setting owner
+and group ids.
 
 ## saving arbitrary work-in-progress
 
-I use this for stuff like documents, spreadsheets, etc.; basically anything
-that is of short term value (less than a year, say), and doesn't belong to any
-specific project, but which you still want to checkpoint for safety while
-working on it.  I have a shell function called "save":
+I also use gaf to save files that are of short term value (less than a year,
+say), and don't belong to any specific project, but which I still want to
+checkpoint for safety while working on them (typically documents,
+spreadsheets, etc.).  I have a shell function called "save":
 
     save() (
         export GAF_REPO=$HOME/.save
@@ -162,10 +164,6 @@ working on it.  I have a shell function called "save":
         gaf save `date +%Y-%m`-save "$@"
     )
 
-so I just run, for example, `save review-comments.odt`.
-
-Note how we use a different gaf repo than the default, and how the function
-runs in a subshell to avoid setting that variable in the current shell.  Also
-note how the branch names are created to start with YY-MM for easy disposal.
-Finally, note that this kind of branch is not -- generally -- a suitable
-candidate for "restore" (which is why it's in a non-default gaf repo!)
+which lets me run, say, `save review-comments.odt`.  Note that this kind of
+branch is not -- generally -- a suitable candidate to "restore", which is why
+it's in a non-default gaf repo!

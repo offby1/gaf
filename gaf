@@ -61,6 +61,29 @@ update_list() {
     }
 }
 
+# TODO: orcish maneuver in 4 places below
+save_meta() {
+    # called from copy_to_repo; PWD is original PWD not GAF_REPO
+    (cd $GAF_REPO; find . -name .git -prune -o -print ) | sort | perl -lne '
+        @s = stat($_) or next;
+        print "fail $_" unless @s;
+        $m = $s[2] & 07777;
+        $u = getpwuid $s[4];
+        $g = getgrgid $s[5];
+        printf "%04o\t%s\t%s\t%s\n", $m, $u, $g, $_;
+    ' > $GAF_REPO/.gaf-meta
+}
+restore_meta() {
+    # called from copy_from_repo; PWD is GAF_REPO, arg-1 is target
+    [ -f .gaf-meta ] && perl -lne '
+        BEGIN { chdir +shift; }
+        ($m, $u, $g, $n) = split /\t/, $_, 4;
+        chmod oct($m), $n;
+        next if $>;
+        chown scalar(getpwnam($u)), scalar(getgrnam($g)), $n;
+    ' $1 < .gaf-meta
+}
+
 # ----------------------------------------------------------------------
 # copy files to repo from 'working' copies
 
@@ -75,12 +98,15 @@ copy_to_repo() {
         # copy $src with full path into $dst (not just the last node).  That
         # is, copying a/b/c to d/e will result in d/e/a/b/c, not d/e/c.
         tar -cf - --exclude .git $src | (cd $GAF_REPO; tar -xf -)
-        return $?
+        save_meta
+        return
     fi
 
     # else, just refresh files/dirs already in the branch
+    touch .gaf-meta # a bit of a kludge but better than a grep -v in the middle of the next pipe!
     # file list                  | from orig PWD  | to $GAF_REPO
     (cd $GAF_REPO; git ls-files) | tar -cf - -T - | tar -C $GAF_REPO -xf -
+    save_meta
 }
 
 # ----------------------------------------------------------------------
@@ -88,6 +114,7 @@ copy_to_repo() {
 
 copy_from_repo() {
     git_checkout $1 && git archive HEAD | tar -C $opwd -xf -
+    restore_meta $opwd
 }
 
 # ----------------------------------------------------------------------

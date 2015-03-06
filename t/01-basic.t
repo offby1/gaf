@@ -18,7 +18,7 @@ cd
 
 tsh <<EOF
 
-plan 87
+plan 92
 
 ## init and basics
 
@@ -88,7 +88,7 @@ cd
 gaf save tsh gaftest/config
     ok
     /\[tsh [0-9a-f]{7}\] tsh: gaftest/config/
-    / 3 files changed, 15 insertions\(\+\)/
+    / 4 files changed, 22 insertions\(\+\)/
     / create mode 100644 gaftest/config/fileA/
     / create mode 100644 gaftest/config/fileB/
     / create mode 100644 gaftest/config/fileC/
@@ -100,7 +100,7 @@ gaf list
 gaf save tsh gaftest/local/tsh
     ok
     /\[tsh [0-9a-f]{7}\] tsh: gaftest/local/tsh/
-    / 16 files changed, 2429 insertions\(\+\)/
+    / 17 files changed, 2450 insertions\(\+\)/
     / create mode 100644 gaftest/local/tsh/COPYING/
     / create mode 100644 gaftest/local/tsh/doc/tsh.mkd/
     / create mode 100644 gaftest/local/tsh/html/gl-t12.html/
@@ -192,5 +192,16 @@ gaf list
     ok
     /master/
     /\* tsh/
+
+ls -al gaftest/config/fileA
+    /-rw-------/
+chmod 621 gaftest/config/fileA
+    ok
+ls -al gaftest/config/fileA
+    /-rw--w---x/
+gaf restore
+    ok
+ls -al gaftest/config/fileA
+    /-rw-------/
 
 EOF
