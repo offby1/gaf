@@ -45,8 +45,9 @@ git, which is how `gaf push` works.
 ## managing /etc and such
 
 If you login as root, cd to "/", and set GAF\_REPO to some non-default
-location, gaf can manage your system files.  It's kinda like etckeeper, with a
-few important differences that I really needed:
+location, gaf can manage your system files.  It's kinda like
+[etckeeper](http://etckeeper.branchable.com/), with a few important
+differences that I really needed:
 
 *   It doesn't unconditionally commit the whole of `/etc` every night (though
     if you do want that it's trivial: just edit your crontab and add something
