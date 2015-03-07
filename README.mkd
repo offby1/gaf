@@ -143,9 +143,10 @@ Here is the complete list, with sample usages where appropriate.
         for each branch in the feature list.  Note this involves checking out
         each branch in turn!
 
-    *   `gaf diff <branch> [<diff options>]`: runs a full diff for the
-        given branch.  You can append whatever options you like; the default
-        is nothing so you get a plain `git diff`.
+    *   `gaf diff <pattern> [<diff options>]`: runs a full diff for each
+        feature that matches the pattern give.  You can append whatever
+        options you like; the default is nothing so you get a plain `git
+        diff`.
 
     Use this to see what changes `gaf save` would commit.  Or conversely, what
     changes `gaf restore` would overwrite!

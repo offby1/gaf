@@ -215,7 +215,8 @@ gaf_diff() {
         list="`cat $GAF_FLIST`"
         set -- "--stat"
     else
-        list=$1; shift
+        list="`cat $GAF_FLIST | grep -i $1`"
+        shift
     fi
 
     for branch in $list     # git branches can't have spaces in them anyway, thank God!
