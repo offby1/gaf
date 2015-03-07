@@ -200,7 +200,7 @@ gaf_cycle() {
         do
             echo -n $f...
             $0 save $f
-            $0 pull $remote $f  >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
+            $0 merge $remote/$f  >&/dev/null || die "branch '$f' has conflicts or upstream has not been defined"
             $0 restore $f
         done
         echo
