@@ -68,8 +68,8 @@ save_meta() {
         @s = stat($_) or next;
         print "fail $_" unless @s;
         $m = $s[2] & 07777;
-        $u = getpwuid $s[4];
-        $g = getgrgid $s[5];
+        $u = ( $> == $s[4] ) ? "" : getpwuid $s[4];
+        $g = ( $) == $s[5] ) ? "" : getgrgid $s[5];
         printf "%04o\t%s\t%s\t%s\n", $m, $u, $g, $_;
     ' > $GAF_REPO/.gaf-meta
 }
@@ -80,7 +80,9 @@ restore_meta() {
         ($m, $u, $g, $n) = split /\t/, $_, 4;
         chmod oct($m), $n;
         next if $>;
-        chown scalar(getpwnam($u)), scalar(getgrnam($g)), $n;
+        $u = ($u ? getpwnam($u) : $>);
+        $g = ($g ? getgrnam($g) : $));
+        chown $u, $g, $n;
     ' $1 < .gaf-meta
 }
 
