@@ -52,8 +52,8 @@ differences that I really needed:
 *   It doesn't unconditionally commit the whole of `/etc` every night (though
     if you do want that it's trivial: just edit your crontab and add something
     like `cd /; GAF_REPO=$HOME/.sysgaf gaf save etc /etc`).
-*   It lets me add stuff outside `/etc` as well, like /var/named/...,
-    /var/spool/cron, etc.
+*   It lets me add stuff outside `/etc` as well, like `/var/named/`...,
+    `/var/spool/cron`, etc.
 *   It lets me keep the config for *many* machines in *one* repo -- they're
     just different "features".
 
