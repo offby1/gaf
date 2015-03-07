@@ -19,7 +19,7 @@ Once things are all setup, I only ever run `gaf cycle && gaf push` at
 The **gaf repo** is `~/.gaf` by default, though you can set the `GAF_REPO` env
 var to override that.  It's just a normal git repo, and propagation of that
 repo between different users/machines (don't forget to clone it as `~/.gaf`!)
-is upto you.  I assume you have a working knowledge of git and know how to do
+is up to you.  I assume you have a working knowledge of git and know how to do
 that.
 
 Each branch in the gaf repo is a **feature**.  For example, you might have
@@ -145,7 +145,7 @@ Here is the complete list, with sample usages where appropriate.
         each branch in turn!
 
     *   `gaf diff <pattern> [<diff options>]`: runs a full diff for each
-        feature that matches the pattern give.  You can append whatever
+        feature that matches the pattern given.  You can append whatever
         options you like; the default is nothing so you get a plain `git
         diff`.
 
