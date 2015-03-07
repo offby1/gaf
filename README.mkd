@@ -163,7 +163,7 @@ Here is the complete list, with sample usages where appropriate.
     to review the files you're *not* saving, and consider if some of them
     should be saved to some feature.
 
-*   **`gaf <any git command or alias + args>`** 
+*   **`gaf <any git command or alias + args>`**
 
     Gaf takes anything that it does not recognise and runs it via *git*
     itself, after `cd`-ing to the gaf repo.  This is so that you don't have to
